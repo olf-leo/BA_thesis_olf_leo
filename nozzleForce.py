@@ -82,6 +82,7 @@ def calc_force(
         nozzle_distance, 
         nozzle_diameter, 
         nozzle_pressure,
+        flow,
         ray_number,
         flow_mode,
         print_results,
@@ -188,7 +189,7 @@ def calc_force(
 
     ray_height = 100*wsf
     #nozzle_distance = 25*wsf
-    nozzle_spread = 20 #[Degrees]
+    nozzle_spread = 40.0 #[Degrees]
     d1 = nozzle_diameter*wsf #nozzle diameter [mm]
     ray_height += d1/math.tan(nozzle_spread*math.pi/180/2)
     ray_angle = 0.0
@@ -352,7 +353,7 @@ def calc_force(
     average = 0.5/circle_number
 
     mu = circle_number
-    sigma = circle_number/3.4      #2.15 or 3.15
+    sigma = circle_number/3      #3 for method 3, 40deg
 
     for i in range (1, circle_number+1):
     
@@ -440,17 +441,38 @@ def calc_force(
     roh = 1.225 #density of air [Kg/m^3]
     p1 = 101325 #ambient air pressure [Pa]
     p0 = p1 + nozzle_pressure #nozzle pressure [Pa]
+    roh1 = p0/(287.05*293.15)
     gamma = nozzle_spread 
     #cw = 1.17 #drag coefficient [-]
     kappa = 1.4 #heat capacity ratio [-]
     #already established further up: d1 = 0.0035 #nozzle diameter [m]
-    #Fw  = cw*Ast*p1*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2 #resistance force [N] 
-    Fw  = cw*Ast*p1*(kappa/(kappa-1))*(p0-p1+1500)/550000*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2 #trial and error
-    #Fw  = cw*Ast*p1*(1-(p1/p0))*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2#trial and error
+    Fw  = cw*Ast*p1*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2*roh/roh1 #resistance force [N] 
+    #Fw  = cw*Ast*p1*(kappa/(kappa-1))*(p0-p1+1500)/550000*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2 #trial and error
+    #Fw  = 0.67*cw*roh/2*(2*nozzle_pressure/roh)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2+0.015 #20deg: *0.7, +0.015
     Fwb = cw*Ast*p1*(kappa/(kappa-1))*(1-(p1/p0)**(kappa/(kappa-1)))*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2 #Bansman method used in Matlab, still contains mistake
 
+    area_comp = (d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2
+
     if(flow_mode):
-        Fw = cw*roh/2*((nozzle_pressure*1000/(2*math.pi))**2)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2
+        #Fw = cw*roh/2*((flow*1000/(2*math.pi))**2)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2
+        w2 = math.sqrt((flow*1000/(4*math.pi))**2+(2*nozzle_pressure/roh)*(1-(nozzle_pressure/(2*kappa*p1))))
+        print(w2, nozzle_pressure)
+        Fw = cw*roh/2*(w2**2)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2
+
+    tan = math.tan(nozzle_spread*math.pi/180/2)
+    
+    #finding angle problem
+    #print('angle: '+str(nozzle_spread))  
+    #print('hit fraction: '+str(hit_fraction))  
+    #print('Ast: '+str(Ast))
+    #print('area comp term: '+str(area_comp))
+    #print('Ast* area comp term: '+str(Ast*area_comp))
+    #print('Ast* area comp term 2: '+str((y*math.tan(nozzle_spread*math.pi/180/2)+d1/2)**2*math.pi*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2))
+    #print('nozzle area: '+str((d1/2)**2*math.pi))
+    #print('sin: '+str(math.tan(gamma*math.pi/180/2)))
+    #print('tan: '+str(math.tan(nozzle_spread*math.pi/180/2)))
+    
+    
 
     if (print_results):
         print('Object name: '+name_obj)
@@ -498,5 +520,7 @@ def calc_force(
 
 
 #calc_force('0_5dx1h_disc', [0,0,0], 1.17, 26, 4, 60000, 300, False, True, True, False)
-#calc_force('4dx1h_disc', [0,0,0], 1.17, 26, 4, 2.88, 300, True, True, False, False)
+
+calc_force('4dx1h_disc', [0,0,0], 1.17, 26, 4, 60000, 0, 300, False, False, False, False)
+
 
