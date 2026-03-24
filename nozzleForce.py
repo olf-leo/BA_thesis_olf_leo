@@ -434,19 +434,27 @@ def calc_force(
     if not (distance_sum == 0):
         average_distance = distance_sum/hit_number/wsf
     
-
+    bars = nozzle_pressure/100000
+    #cw = -2.054*bars**3+3.260*bars**2-1.181*bars+1.104
+    #print(cw)
     y = average_distance/1000 #distance from nozzle to object [m]
     r1 =y*math.tan(nozzle_spread*math.pi/180/2)+d1/2 #radius of projected circle
     Ast = r1**2*math.pi*hit_fraction #Anstroemflaeche [m^2]
     roh = 1.225 #density of air [Kg/m^3]
     p1 = 101325 #ambient air pressure [Pa]
     p0 = p1 + nozzle_pressure #nozzle pressure [Pa]
-    roh1 = p0/(287.05*293.15)
     gamma = nozzle_spread 
     #cw = 1.17 #drag coefficient [-]
     kappa = 1.4 #heat capacity ratio [-]
+    t1 = 293.15*(p1/p0)**((kappa-1)/kappa)
+    roh0 = p0/(287.05*293.15)
+    roh1 = p1/(287.05*t1)
     #already established further up: d1 = 0.0035 #nozzle diameter [m]
-    Fw  = cw*Ast*p1*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2*roh/roh1 #resistance force [N] 
+    w1 = math.sqrt(2*p0/roh0*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa)))
+    Fw  = cw*Ast*p0*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2*roh/roh0 #resistance force [N] 
+    Fw = cw*Ast*roh*287.05*293.15*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2
+    Fw = cw*Ast*roh*1005*293.15*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2
+    #Fw  = cw*Ast*p1*(kappa/(kappa-1))*(1-(p1/p0)**((kappa-1)/kappa))*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2
     #Fw  = cw*Ast*p1*(kappa/(kappa-1))*(p0-p1+1500)/550000*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2 #trial and error
     #Fw  = 0.67*cw*roh/2*(2*nozzle_pressure/roh)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2+0.015 #20deg: *0.7, +0.015
     Fwb = cw*Ast*p1*(kappa/(kappa-1))*(1-(p1/p0)**(kappa/(kappa-1)))*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2 #Bansman method used in Matlab, still contains mistake
@@ -455,9 +463,10 @@ def calc_force(
 
     if(flow_mode):
         #Fw = cw*roh/2*((flow*1000/(2*math.pi))**2)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2
-        w2 = math.sqrt((flow*1000/(4*math.pi))**2+(2*nozzle_pressure/roh)*(1-(nozzle_pressure/(2*kappa*p1))))
-        print(w2, nozzle_pressure)
-        Fw = cw*roh/2*(w2**2)*Ast*(d1/(d1+2*y*math.sin(gamma*math.pi/180/2)))**2
+        #w2 = math.sqrt((flow*1000/(4*math.pi))**2+(2*nozzle_pressure/roh)*(1-(nozzle_pressure/(2*kappa*p1))))
+        w2 = math.sqrt(2*(kappa/(kappa-1))*((p0/roh0)-(p1/roh1)))
+        
+        Fw = cw*roh/2*(w2**2)*Ast*(d1/(d1+2*y*math.tan(gamma*math.pi/180/2)))**2
 
     tan = math.tan(nozzle_spread*math.pi/180/2)
     
@@ -521,6 +530,6 @@ def calc_force(
 
 #calc_force('0_5dx1h_disc', [0,0,0], 1.17, 26, 4, 60000, 300, False, True, True, False)
 
-calc_force('4dx1h_disc', [0,0,0], 1.17, 26, 4, 60000, 0, 300, False, False, False, False)
+#calc_force('1dx1h_disc', [0,0,0], 1.17, 25, 4, 60000, 0, 300, False, True, False, False)
 
 

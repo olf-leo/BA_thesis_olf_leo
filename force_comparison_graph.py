@@ -175,9 +175,7 @@ def plot_results(pressures, experimental_forces, force_cis, simulated_forces, di
     plt.plot(pressures, simulated_forces, marker='s', linestyle='--', 
              label='Simulated Force', color='red', alpha=0.8)
     
-    # 5. Theoretical "Ideal" Force (F = 2AP)
-    #plt.plot(pressures, theoretical_forces, linestyle=':', color='green', linewidth=2,
-    #         label=f'Theoretical Ideal ($F=2AP$, $d=4mm$)')
+    
     
     plt.title(f'Experimental Fit vs. Simulation (D: {diameter}mm, Dist: {distance}mm)')
     plt.xlabel('Nozzle Pressure (Bar)')
@@ -190,16 +188,19 @@ def plot_results(pressures, experimental_forces, force_cis, simulated_forces, di
 def plot_results_sim_compare(pressures, experimental_forces, force_cis, simulated_forces, simulated_forces2, diameter, distance):
     plt.figure(figsize=(10, 6))
     
+    cw = []
+    for i in range(len(pressures)):
+        cw.append(experimental_forces[i]/simulated_forces[i])
+    print(cw)
+    a, b, c, d = np.polyfit(pressures, cw, 3)
+    
+    print(a, b, c, d)
+
     # 1. Perform Polynomial Fit (Degree 2 for physical force curves)
     z = np.polyfit(pressures, experimental_forces, 2)
     p = np.poly1d(z)
+    
 
-    # 2. Calculate Theoretical Force: F = 2 * A * P
-    # A = pi * r^2 (radius in meters)
-    radius_m = (4 / 2) / 1000 
-    area_m2 = math.pi * (radius_m**2)
-    # P in Pascals = P_bar * 100,000
-    theoretical_forces = [0.5 * 2 * area_m2 * (p * 100000) for p in pressures]
     
     # Calculate R-squared
     y_fit = p(pressures)
@@ -223,11 +224,15 @@ def plot_results_sim_compare(pressures, experimental_forces, force_cis, simulate
              label='Simulated Force', color='red', alpha=0.8)
     
     plt.plot(pressures, simulated_forces2, marker='s', linestyle='--', 
-             label='Simulated Force 2', color='green', alpha=0.8)
+             label='Bernoulli', color='green', alpha=0.8)
     
+    #theoretical_forces = [p**1.2+0.04 for p in pressures]
+    cw = []
+    for i in range(len(pressures)):
+        cw.append(sim_forces2[i]*((pressures[i]**1.27+0.02)/(1.1*pressures[i])))
     # 5. Theoretical "Ideal" Force (F = 2AP)
-    #plt.plot(pressures, theoretical_forces, linestyle=':', color='green', linewidth=2,
-    #         label=f'Theoretical Ideal ($F=2AP$, $d=4mm$)')
+    #plt.plot(pressures, theoretical_forces, marker='s', linestyle='--', 
+    #         label='stuff', color='black', alpha=0.8)
     
     plt.title(f'Experimental Fit vs. Simulation (D: {diameter}mm, Dist: {distance}mm)')
     plt.xlabel('Nozzle Pressure (Bar)')
@@ -395,7 +400,7 @@ def flow_convert(flows, tank_pressures, t1=293):
 #              0    1     2    3     4    5     6    7    8    9   10   11
 pressures = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8]
 pressure_index = 5
-distance = 26
+distance = 25
 testdata_filepath = '/Users/leonardolfens/Desktop/Python_Match/pybullet/testdata/mesh_tests/10_03_26-18_29_10.03.2026D40big.csv'
 
 flow_data_filepath = '/Users/leonardolfens/Desktop/Python_Match/pybullet/testdata/D40d26_2026-03-10.txt'
